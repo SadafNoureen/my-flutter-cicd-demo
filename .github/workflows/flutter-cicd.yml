@@ -12,11 +12,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Fixed Flutter setup
+      - name: Cache Flutter dependencies
+        uses: actions/cache@v3
+        with:
+          path: /opt/hostedtoolcache/flutter
+          key: flutter-${{ runner.os }}-${{ hashFiles('pubspec.lock') }}
+
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.22.0'  # Explicit version
+          flutter-version: '3.22.0'
           channel: 'stable'
 
       - name: Install dependencies
@@ -26,7 +31,10 @@ jobs:
         run: flutter test
 
       - name: Build web
-        run: flutter build web --release
+        run: flutter build web --release --base-href /my-flutter-cicd-demo/
+
+      - name: List build files (Debug)
+        run: ls -la build/web
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
@@ -34,3 +42,4 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./build/web
+          keep_files: false
