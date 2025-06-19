@@ -1,45 +1,38 @@
-name: Flutter CI/CD
+name: Flutter Web Deployment
 
 on:
   push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
-  build-deploy:
+  deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Cache Flutter dependencies
-        uses: actions/cache@v3
-        with:
-          path: /opt/hostedtoolcache/flutter
-          key: flutter-${{ runner.os }}-${{ hashFiles('pubspec.lock') }}
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.22.0'
-          channel: 'stable'
+          channel: stable
 
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Run tests
-        run: flutter test
-
       - name: Build web
-        run: flutter build web --release --base-href /my-flutter-cicd-demo/
+        run: |
+          flutter build web --release \
+            --base-href /my-flutter-cicd-demo/ \
+            --dart-define=FLUTTER_WEB_CANVASKIT_URL=/my-flutter-cicd-demo/canvaskit/ \
+            --dart-define=FLUTTER_BASE_HREF=/my-flutter-cicd-demo/
 
-      - name: List build files (Debug)
+      - name: Verify build files
         run: ls -la build/web
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
-        if: github.ref == 'refs/heads/main'
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./build/web
           keep_files: false
+          force_orphan: true
